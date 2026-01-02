@@ -2,16 +2,25 @@
 /*
   NODE.JS WEB SERVICE WRAPPER (For Render Web Service Deployment)
   The following JavaScript block allows this single file to act as its own server.
+  
+  RENDER SETTINGS:
+  - Build Command: echo "Build bypassed"
+  - Start Command: node index.html
 */
 const fs = require('fs');
 const http = require('http');
 
 if (typeof window === 'undefined') {
+    // Basic server to serve this file
     const port = process.env.PORT || 3000;
-    http.createServer((req, res) => {
+    const server = http.createServer((req, res) => {
         res.writeHead(200, { 'Content-Type': 'text/html' });
         res.end(fs.readFileSync(__filename));
-    }).listen(port, () => console.log(`Server running on port ${port}`));
+    });
+
+    server.listen(port, '0.0.0.0', () => {
+        console.log(`MyOS Web Service active on port ${port}`);
+    });
     return;
 }
 -->
@@ -244,7 +253,7 @@ if (typeof window === 'undefined') {
 </head>
 <body>
 
-    <div id="deploy-status">MyOS v1.0.2-web-service</div>
+    <div id="deploy-status">MyOS v1.0.3-web-service</div>
 
     <!-- BOOT SCREEN -->
     <div id="boot-screen">
@@ -315,7 +324,7 @@ if (typeof window === 'undefined') {
         /**
          * RENDER WEB SERVICE DEPLOYMENT:
          * 1. Create a "Web Service" on Render.
-         * 2. Build Command: (Leave Blank)
+         * 2. Build Command: echo "Build bypassed"
          * 3. Start Command: node index.html
          */
 
@@ -329,7 +338,7 @@ if (typeof window === 'undefined') {
             firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
         } catch(e) { console.warn("Firebase config check bypassed."); }
         
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'my-os-web-service';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'my-os-web-service-v1';
         
         if (firebaseConfig && firebaseConfig.apiKey) {
             firebase.initializeApp(firebaseConfig);
