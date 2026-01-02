@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MyOS</title>
-    <!-- Use Compat SDKs which work better in local file:// environments -->
+    <!-- Use Compat SDKs which work better in local and hosted environments -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -21,7 +21,7 @@
             padding: 0;
             width: 100%;
             height: 100%;
-            font-family: "Segoe UI", sans-serif;
+            font-family: "Segoe UI", "Tahoma", sans-serif;
             background-color: #000;
             color: var(--text-main);
             overflow: hidden;
@@ -214,9 +214,20 @@
             margin-top: 10px;
             min-height: 14px;
         }
+        
+        #deploy-status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            font-size: 10px;
+            opacity: 0.5;
+            z-index: 2000;
+        }
     </style>
 </head>
 <body>
+
+    <div id="deploy-status">MyOS v1.0.0-deploy</div>
 
     <!-- BOOT SCREEN -->
     <div id="boot-screen">
@@ -284,86 +295,111 @@
     </div>
 
     <script>
-        // Use Compat SDK pattern for maximum browser compatibility
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'my-os-app-v3';
+        /**
+         * RENDER DEPLOYMENT INSTRUCTIONS:
+         * 1. Save this file as 'index.html'.
+         * 2. Push to a GitHub Repository.
+         * 3. On Render.com, create a new "Static Site".
+         * 4. Connect your Repo. No Build Command is needed. Publish directory is "."
+         */
+
+        // Safe Firebase Configuration Loader
+        let firebaseConfig = {};
+        try {
+            firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        } catch(e) { console.warn("Firebase config not found, using manual entry if available."); }
         
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'my-os-deploy-v1';
+        
+        // Initialize Firebase only if config is provided
+        if (firebaseConfig.apiKey) {
+            firebase.initializeApp(firebaseConfig);
+            const auth = firebase.auth();
+            const db = firebase.firestore();
 
-        let isSignUpMode = false;
+            let isSignUpMode = false;
 
-        // --- 1. BOOT SEQUENCE ---
-        document.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => {
-                const boot = document.getElementById('boot-screen');
-                boot.style.transition = 'opacity 0.5s';
-                boot.style.opacity = '0';
+            // --- 1. BOOT SEQUENCE ---
+            document.addEventListener('DOMContentLoaded', () => {
                 setTimeout(() => {
-                    boot.style.display = 'none';
-                    checkAuthState();
-                }, 500);
-            }, 5000);
-        });
+                    const boot = document.getElementById('boot-screen');
+                    boot.style.transition = 'opacity 0.5s';
+                    boot.style.opacity = '0';
+                    setTimeout(() => {
+                        boot.style.display = 'none';
+                        checkAuthState();
+                    }, 500);
+                }, 5000);
+            });
 
-        // --- 2. AUTHENTICATION ---
-        async function checkAuthState() {
-            auth.onAuthStateChanged((user) => {
-                if (user) {
-                    document.getElementById('login-screen').style.display = 'none';
-                    document.getElementById('desktop').style.display = 'block';
-                    document.getElementById('user-display').innerText = user.email || "User";
-                } else {
-                    document.getElementById('desktop').style.display = 'none';
-                    document.getElementById('login-screen').style.display = 'flex';
+            // --- 2. AUTHENTICATION ---
+            function checkAuthState() {
+                auth.onAuthStateChanged((user) => {
+                    if (user) {
+                        document.getElementById('login-screen').style.display = 'none';
+                        document.getElementById('desktop').style.display = 'block';
+                        document.getElementById('user-display').innerText = user.email || "User";
+                    } else {
+                        document.getElementById('desktop').style.display = 'none';
+                        document.getElementById('login-screen').style.display = 'flex';
+                    }
+                });
+            }
+
+            async function handleAuth() {
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                const errorDiv = document.getElementById('error-msg');
+                const btn = document.getElementById('auth-btn');
+                
+                if (!email || !password) {
+                    errorDiv.innerText = "Please fill in all fields.";
+                    return;
                 }
+
+                errorDiv.innerText = "";
+                btn.disabled = true;
+
+                try {
+                    if (isSignUpMode) {
+                        const userCred = await auth.createUserWithEmailAndPassword(email, password);
+                        await db.collection('artifacts').doc(appId).collection('users').doc(userCred.user.uid).collection('settings').doc('profile').set({
+                            email: email,
+                            registeredAt: new Date().toISOString()
+                        });
+                    } else {
+                        await auth.signInWithEmailAndPassword(email, password);
+                    }
+                } catch (err) {
+                    errorDiv.innerText = err.message;
+                } finally {
+                    btn.disabled = false;
+                }
+            }
+
+            document.getElementById('auth-btn').onclick = handleAuth;
+
+            document.getElementById('toggle-auth-btn').onclick = () => {
+                isSignUpMode = !isSignUpMode;
+                document.getElementById('auth-title').innerText = isSignUpMode ? 'Create Account' : 'Welcome to MyOS';
+                document.getElementById('auth-btn').innerText = isSignUpMode ? 'Register' : 'Sign In';
+                document.getElementById('toggle-auth-btn').innerText = isSignUpMode ? 'Already have an account? Sign In' : "Don't have an account? Sign Up";
+            };
+
+            document.getElementById('logout-btn').onclick = () => {
+                auth.signOut();
+            };
+        } else {
+            // Development/No-Auth Fallback
+            document.addEventListener('DOMContentLoaded', () => {
+                setTimeout(() => {
+                    document.getElementById('boot-screen').style.display = 'none';
+                    document.getElementById('desktop').style.display = 'block';
+                    document.getElementById('user-display').innerText = "Guest Mode";
+                    console.log("Running in Guest Mode (No Firebase Config)");
+                }, 5000);
             });
         }
-
-        async function handleAuth() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const errorDiv = document.getElementById('error-msg');
-            const btn = document.getElementById('auth-btn');
-            
-            if (!email || !password) {
-                errorDiv.innerText = "Please fill in all fields.";
-                return;
-            }
-
-            errorDiv.innerText = "";
-            btn.disabled = true;
-
-            try {
-                if (isSignUpMode) {
-                    const userCred = await auth.createUserWithEmailAndPassword(email, password);
-                    await db.collection('artifacts').doc(appId).collection('users').doc(userCred.user.uid).collection('settings').doc('profile').set({
-                        email: email,
-                        registeredAt: new Date().toISOString()
-                    });
-                } else {
-                    await auth.signInWithEmailAndPassword(email, password);
-                }
-            } catch (err) {
-                errorDiv.innerText = err.message;
-            } finally {
-                btn.disabled = false;
-            }
-        }
-
-        document.getElementById('auth-btn').onclick = handleAuth;
-
-        document.getElementById('toggle-auth-btn').onclick = () => {
-            isSignUpMode = !isSignUpMode;
-            document.getElementById('auth-title').innerText = isSignUpMode ? 'Create Account' : 'Welcome to MyOS';
-            document.getElementById('auth-btn').innerText = isSignUpMode ? 'Register' : 'Sign In';
-            document.getElementById('toggle-auth-btn').innerText = isSignUpMode ? 'Already have an account? Sign In' : "Don't have an account? Sign Up";
-        };
-
-        document.getElementById('logout-btn').onclick = () => {
-            auth.signOut();
-        };
 
         // --- 3. DESKTOP INTERACTIONS ---
         document.getElementById('start-btn').onclick = (e) => {
