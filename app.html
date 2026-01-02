@@ -1,29 +1,23 @@
-<!--
 /*
-  NODE.JS WEB SERVICE WRAPPER (For Render Web Service Deployment)
-  The following JavaScript block allows this single file to act as its own server.
-  
-  RENDER SETTINGS:
-  - Build Command: echo "Build bypassed"
-  - Start Command: node index.html
-*/
-const fs = require('fs');
+// This is a "polyglot" file. It is valid JavaScript for Node.js and valid HTML for the browser.
+// When run with Node.js, the block below starts a server.
+// When opened in a browser, the JavaScript comments prevent the HTML from breaking.
+
 const http = require('http');
+const fs = require('fs');
 
 if (typeof window === 'undefined') {
-    // Basic server to serve this file
     const port = process.env.PORT || 3000;
-    const server = http.createServer((req, res) => {
+    http.createServer((req, res) => {
         res.writeHead(200, { 'Content-Type': 'text/html' });
-        res.end(fs.readFileSync(__filename));
+        res.end(fs.readFileSync(__filename, 'utf8'));
+    }).listen(port, '0.0.0.0', () => {
+        console.log(`MyOS is running on port ${port}`);
     });
-
-    server.listen(port, '0.0.0.0', () => {
-        console.log(`MyOS Web Service active on port ${port}`);
-    });
-    return;
+    // Stop Node from trying to parse the rest of the file as JS
+    return; 
 }
--->
+*/
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -253,7 +247,7 @@ if (typeof window === 'undefined') {
 </head>
 <body>
 
-    <div id="deploy-status">MyOS v1.0.3-web-service</div>
+    <div id="deploy-status">MyOS v1.0.4-polyglot</div>
 
     <!-- BOOT SCREEN -->
     <div id="boot-screen">
@@ -322,23 +316,24 @@ if (typeof window === 'undefined') {
 
     <script>
         /**
-         * RENDER WEB SERVICE DEPLOYMENT:
-         * 1. Create a "Web Service" on Render.
-         * 2. Build Command: echo "Build bypassed"
-         * 3. Start Command: node index.html
+         * UPDATED RENDER SETTINGS:
+         * 1. Build Command: echo "Build bypassed"
+         * 2. Start Command: node index.html
+         * * Note: The server-side code is now at the top of this file
+         * and wrapped in JavaScript comments to prevent browser issues.
          */
 
         window.onerror = function(msg, url, lineNo, columnNo, error) {
-            console.error('MyOS Error: ' + msg + ' script: ' + url + ' line: ' + lineNo);
+            console.error('MyOS Error: ' + msg);
             return false;
         };
 
         let firebaseConfig = {};
         try {
             firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        } catch(e) { console.warn("Firebase config check bypassed."); }
+        } catch(e) {}
         
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'my-os-web-service-v1';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'my-os-v1';
         
         if (firebaseConfig && firebaseConfig.apiKey) {
             firebase.initializeApp(firebaseConfig);
