@@ -1,3 +1,20 @@
+<!--
+/*
+  NODE.JS WEB SERVICE WRAPPER (For Render Web Service Deployment)
+  The following JavaScript block allows this single file to act as its own server.
+*/
+const fs = require('fs');
+const http = require('http');
+
+if (typeof window === 'undefined') {
+    const port = process.env.PORT || 3000;
+    http.createServer((req, res) => {
+        res.writeHead(200, { 'Content-Type': 'text/html' });
+        res.end(fs.readFileSync(__filename));
+    }).listen(port, () => console.log(`Server running on port ${port}`));
+    return;
+}
+-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -227,7 +244,7 @@
 </head>
 <body>
 
-    <div id="deploy-status">MyOS v1.0.1-stable</div>
+    <div id="deploy-status">MyOS v1.0.2-web-service</div>
 
     <!-- BOOT SCREEN -->
     <div id="boot-screen">
@@ -296,31 +313,24 @@
 
     <script>
         /**
-         * RENDER DEPLOYMENT INSTRUCTIONS:
-         * 1. On Render.com Dashboard, click "New" -> "Static Site".
-         * 2. Connect your GitHub Repo (Leothelion6721/MyOS).
-         * 3. Settings:
-         * - Build Command: (Leave Blank)
-         * - Publish Directory: .
-         * * Note: If Render asks for a Dockerfile, you selected "Web Service" instead of "Static Site".
+         * RENDER WEB SERVICE DEPLOYMENT:
+         * 1. Create a "Web Service" on Render.
+         * 2. Build Command: (Leave Blank)
+         * 3. Start Command: node index.html
          */
 
-        // Error handling for easier debugging on deployed environment
         window.onerror = function(msg, url, lineNo, columnNo, error) {
             console.error('MyOS Error: ' + msg + ' script: ' + url + ' line: ' + lineNo);
             return false;
         };
 
-        // Safe Firebase Configuration Loader
         let firebaseConfig = {};
         try {
-            // Environment variables logic for Canvas environment
             firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
         } catch(e) { console.warn("Firebase config check bypassed."); }
         
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'my-os-deploy-stable';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'my-os-web-service';
         
-        // Initialize Firebase only if config is validly provided
         if (firebaseConfig && firebaseConfig.apiKey) {
             firebase.initializeApp(firebaseConfig);
             const auth = firebase.auth();
@@ -328,7 +338,6 @@
 
             let isSignUpMode = false;
 
-            // --- 1. BOOT SEQUENCE ---
             document.addEventListener('DOMContentLoaded', () => {
                 setTimeout(() => {
                     const boot = document.getElementById('boot-screen');
@@ -341,7 +350,6 @@
                 }, 5000);
             });
 
-            // --- 2. AUTHENTICATION ---
             function checkAuthState() {
                 auth.onAuthStateChanged((user) => {
                     if (user) {
@@ -399,7 +407,6 @@
                 auth.signOut();
             };
         } else {
-            // Development/No-Auth Fallback (Guest Mode)
             document.addEventListener('DOMContentLoaded', () => {
                 setTimeout(() => {
                     const boot = document.getElementById('boot-screen');
@@ -413,7 +420,6 @@
             });
         }
 
-        // --- 3. DESKTOP INTERACTIONS ---
         document.getElementById('start-btn').onclick = (e) => {
             e.stopPropagation();
             document.getElementById('start-menu').classList.toggle('open');
@@ -427,7 +433,6 @@
             }
         });
 
-        // --- 4. CLOCK ---
         function updateClock() {
             const now = new Date();
             const clockEl = document.getElementById('clock');
