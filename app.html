@@ -1,7 +1,6 @@
 /*
-// This is a "polyglot" file. It is valid JavaScript for Node.js and valid HTML for the browser.
-// When run with Node.js, the block below starts a server.
-// When opened in a browser, the JavaScript comments prevent the HTML from breaking.
+// Node.js Web Service Polyglot
+// This file acts as a server when run with 'node' and HTML when opened in a browser.
 
 const http = require('http');
 const fs = require('fs');
@@ -12,16 +11,20 @@ if (typeof window === 'undefined') {
         res.writeHead(200, { 'Content-Type': 'text/html' });
         res.end(fs.readFileSync(__filename, 'utf8'));
     }).listen(port, '0.0.0.0', () => {
-        console.log(`MyOS is running on port ${port}`);
+        console.log(`MyOS Server running on port ${port}`);
     });
     
-    // CRITICAL: We must exit the process to prevent Node from parsing the HTML below.
-    // This solves the "Unexpected token '<'" error.
-    return;
+    // This prevents Node from reaching the HTML below and throwing a SyntaxError
+    setTimeout(() => {}, 2147483647); // Keep process alive
+    return; 
 }
 */
-// The line below is for Node.js to stop execution before reaching HTML
-if (typeof process !== 'undefined' && process.release && process.release.name === 'node') { process.exit(0); }
+
+// Final guard for Node.js environments to prevent parsing the HTML below
+if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+    // We already started the server above, so we stop parsing here.
+    throw new Error("Server started. Ignore this error; it prevents HTML parsing.");
+}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -29,7 +32,7 @@ if (typeof process !== 'undefined' && process.release && process.release.name ==
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MyOS</title>
-    <!-- Use Compat SDKs which work better in local and hosted environments -->
+    <!-- Use Compat SDKs for broader environment support -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -252,7 +255,7 @@ if (typeof process !== 'undefined' && process.release && process.release.name ==
 </head>
 <body>
 
-    <div id="deploy-status">MyOS v1.0.5-polyglot-fixed</div>
+    <div id="deploy-status">MyOS v1.0.6-stable-render</div>
 
     <!-- BOOT SCREEN -->
     <div id="boot-screen">
@@ -321,13 +324,13 @@ if (typeof process !== 'undefined' && process.release && process.release.name ==
 
     <script>
         /**
-         * UPDATED RENDER SETTINGS:
-         * 1. Build Command: echo "Build bypassed"
-         * 2. Start Command: node index.html (or app.html)
+         * RENDER SETTINGS:
+         * Build Command: echo "Build bypassed"
+         * Start Command: node index.html (or app.html)
          */
 
-        window.onerror = function(msg, url, lineNo, columnNo, error) {
-            console.error('MyOS Error: ' + msg);
+        window.onerror = function(msg) {
+            console.error('MyOS Runtime Error: ' + msg);
             return false;
         };
 
@@ -354,7 +357,7 @@ if (typeof process !== 'undefined' && process.release && process.release.name ==
                         boot.style.display = 'none';
                         checkAuthState();
                     }, 500);
-                }, 5000);
+                }, 4000);
             });
 
             function checkAuthState() {
@@ -414,6 +417,7 @@ if (typeof process !== 'undefined' && process.release && process.release.name ==
                 auth.signOut();
             };
         } else {
+            // No Firebase logic (Offline/Preview Mode)
             document.addEventListener('DOMContentLoaded', () => {
                 setTimeout(() => {
                     const boot = document.getElementById('boot-screen');
@@ -423,7 +427,7 @@ if (typeof process !== 'undefined' && process.release && process.release.name ==
                         document.getElementById('desktop').style.display = 'block';
                         document.getElementById('user-display').innerText = "Guest Mode";
                     }, 500);
-                }, 5000);
+                }, 4000);
             });
         }
 
