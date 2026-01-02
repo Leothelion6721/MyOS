@@ -227,7 +227,7 @@
 </head>
 <body>
 
-    <div id="deploy-status">MyOS v1.0.0-deploy</div>
+    <div id="deploy-status">MyOS v1.0.1-stable</div>
 
     <!-- BOOT SCREEN -->
     <div id="boot-screen">
@@ -297,22 +297,31 @@
     <script>
         /**
          * RENDER DEPLOYMENT INSTRUCTIONS:
-         * 1. Save this file as 'index.html'.
-         * 2. Push to a GitHub Repository.
-         * 3. On Render.com, create a new "Static Site".
-         * 4. Connect your Repo. No Build Command is needed. Publish directory is "."
+         * 1. On Render.com Dashboard, click "New" -> "Static Site".
+         * 2. Connect your GitHub Repo (Leothelion6721/MyOS).
+         * 3. Settings:
+         * - Build Command: (Leave Blank)
+         * - Publish Directory: .
+         * * Note: If Render asks for a Dockerfile, you selected "Web Service" instead of "Static Site".
          */
+
+        // Error handling for easier debugging on deployed environment
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            console.error('MyOS Error: ' + msg + ' script: ' + url + ' line: ' + lineNo);
+            return false;
+        };
 
         // Safe Firebase Configuration Loader
         let firebaseConfig = {};
         try {
+            // Environment variables logic for Canvas environment
             firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        } catch(e) { console.warn("Firebase config not found, using manual entry if available."); }
+        } catch(e) { console.warn("Firebase config check bypassed."); }
         
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'my-os-deploy-v1';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'my-os-deploy-stable';
         
-        // Initialize Firebase only if config is provided
-        if (firebaseConfig.apiKey) {
+        // Initialize Firebase only if config is validly provided
+        if (firebaseConfig && firebaseConfig.apiKey) {
             firebase.initializeApp(firebaseConfig);
             const auth = firebase.auth();
             const db = firebase.firestore();
@@ -390,13 +399,16 @@
                 auth.signOut();
             };
         } else {
-            // Development/No-Auth Fallback
+            // Development/No-Auth Fallback (Guest Mode)
             document.addEventListener('DOMContentLoaded', () => {
                 setTimeout(() => {
-                    document.getElementById('boot-screen').style.display = 'none';
-                    document.getElementById('desktop').style.display = 'block';
-                    document.getElementById('user-display').innerText = "Guest Mode";
-                    console.log("Running in Guest Mode (No Firebase Config)");
+                    const boot = document.getElementById('boot-screen');
+                    boot.style.opacity = '0';
+                    setTimeout(() => {
+                        boot.style.display = 'none';
+                        document.getElementById('desktop').style.display = 'block';
+                        document.getElementById('user-display').innerText = "Guest Mode";
+                    }, 500);
                 }, 5000);
             });
         }
@@ -418,8 +430,10 @@
         // --- 4. CLOCK ---
         function updateClock() {
             const now = new Date();
-            document.getElementById('clock').innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            document.getElementById('date').innerText = now.toLocaleDateString();
+            const clockEl = document.getElementById('clock');
+            const dateEl = document.getElementById('date');
+            if (clockEl) clockEl.innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            if (dateEl) dateEl.innerText = now.toLocaleDateString();
         }
         setInterval(updateClock, 1000);
         updateClock();
