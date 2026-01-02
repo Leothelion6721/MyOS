@@ -14,10 +14,15 @@ if (typeof window === 'undefined') {
     }).listen(port, '0.0.0.0', () => {
         console.log(`MyOS is running on port ${port}`);
     });
-    // Stop Node from trying to parse the rest of the file as JS
-    return; 
+    
+    // CRITICAL: We must exit the process to prevent Node from parsing the HTML below.
+    // This solves the "Unexpected token '<'" error.
+    return;
 }
 */
+// The line below is for Node.js to stop execution before reaching HTML
+if (typeof process !== 'undefined' && process.release && process.release.name === 'node') { process.exit(0); }
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -247,7 +252,7 @@ if (typeof window === 'undefined') {
 </head>
 <body>
 
-    <div id="deploy-status">MyOS v1.0.4-polyglot</div>
+    <div id="deploy-status">MyOS v1.0.5-polyglot-fixed</div>
 
     <!-- BOOT SCREEN -->
     <div id="boot-screen">
@@ -318,9 +323,7 @@ if (typeof window === 'undefined') {
         /**
          * UPDATED RENDER SETTINGS:
          * 1. Build Command: echo "Build bypassed"
-         * 2. Start Command: node index.html
-         * * Note: The server-side code is now at the top of this file
-         * and wrapped in JavaScript comments to prevent browser issues.
+         * 2. Start Command: node index.html (or app.html)
          */
 
         window.onerror = function(msg, url, lineNo, columnNo, error) {
