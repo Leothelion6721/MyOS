@@ -92,7 +92,7 @@ const indexHTML = `
 
     <div id="boot-screen">
         <div class="logo">
-            <div class="logo-part"></div><div class="logo-part"></div>
+            <div class="logo-part"></div><div class="logo-part)</div>
             <div class="logo-part"></div><div class="logo-part"></div>
         </div>
         <div class="loader"></div>
@@ -165,36 +165,27 @@ const indexHTML = `
 `
 
 func main() {
-	// 1. Determine Port (Render uses the PORT env var)
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "3000"
 	}
 
-	// 2. Setup the Router
 	mux := http.NewServeMux()
-
-	// 3. Serve the indexHTML for all root requests
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.Header().Set("X-Backend-Server", "Golang-Net-Http")
 		fmt.Fprint(w, indexHTML)
 	})
 
-	// 4. Configure Server with timeouts
 	srv := &http.Server{
 		Addr:         "0.0.0.0:" + port,
 		Handler:      mux,
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
-		IdleTimeout:  60 * time.Second,
 	}
 
 	fmt.Printf("==> MyOS Go Server starting on port %s\n", port)
-	
-	// 5. Start Listening
 	if err := srv.ListenAndServe(); err != nil {
-		fmt.Fprintf(os.Stderr, "Error starting server: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
 }
